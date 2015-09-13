@@ -178,11 +178,59 @@ def get_claims():
 			return make_response(jsonify({'error':'Authentication failed.'}), 400)
 		else:
 			claims = Claims.query.filter_by(user_id=user.id).all()
-			reply = {}
+			reply = []
 			for claim in claims:
-				print claim.requests
+				arr = {
+					'request_id':claim.request_id,
+					'user_id':claim.user_id,
+					'notes':claim.notes,
+					'complete_flag':claim.complete_flag,
+					'request':
+						{
+							'user_id':claim.requests.user_id,
+							'claim_id':claim.requests.claim_id,
+							'title':claim.requests.title,
+							'type':claim.requests.type,
+							'description':claim.requests.description,
+							'paid':claim.requests.paid,
+							'estimated_time':claim.requests.estimated_time,
+							'complete_by':claim.requests.complete_by
+						}	
+				}
+				reply.append(arr)
+				
+			return make_response(jsonify({'data':reply}), 200)
+	
 	else:
 		return make_response(jsonify({'error':'Authentication required.'}), 400)
+
+
+@app.route("/api/v0.1/requests/get", methods=['GET'])
+def get_requests():
+	if request.args['user_token']:
+		user = Users.query.filter_by(user_token=request.args['user_token']).first()
+		if not user:
+			return make_response(jsonify({'error':'Authentication failed.'}), 400)
+		else:
+			reply = []
+			for req in user.requests:
+				arr = {
+					'id':req.id,
+					'user_id':req.user_id,
+					'claim_id':req.claim_id,
+					'title':req.title,
+					'type':req.type,
+					'description':req.description,
+					'paid':req.paid,
+					'estimated_time':req.estimated_time,
+					'complete_by':req.complete_by
+					}
+				reply.append(arr)
+				
+			return make_response(jsonify({'data':reply}), 200)		
+	
+	else:
+		return make_response(jsonify({'error':'Requires authentication'}), 400)
 
 if __name__ == "__main__":
 	if not development:
