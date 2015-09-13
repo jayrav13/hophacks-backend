@@ -154,19 +154,33 @@ def add_claim():
 		return make_reponse(jsonify({'error':'Authentication needed.'}), 400)
 
 
-@app.route("/api/v0.1/claims/confirm", method=['POST'])
+@app.route("/api/v0.1/claims/confirm", methods=['POST'])
 def confirm_claim():
 	if request.form['user_token']:
 		user = Users.query.filter_by(user_token=request.form['user_token']).first()
 		if not user:
 			return make_response(jsonify({'error':'Authentication failed'}), 400)
 		else:
-			req = Requests.query.filter_by(id=request.args['request_id']).first()
-			claim = Claims.query.filter_by(id=request.args['claim_id']).first()
+			req = Requests.query.filter_by(id=request.form['request_id']).first()
+			claim = Claims.query.filter_by(id=request.form['claim_id']).first()
 			req.claim_id = claim.id
 			claim.complete_flag = 1
 			db.session.commit()
 			return make_response(jsonify({'success':'Claim complete.'}), 200)
+	else:
+		return make_response(jsonify({'error':'Authentication required.'}), 400)
+
+@app.route("/api/v0.1/claims/get", methods=['GET'])
+def get_claims():
+	if request.args['user_token']:
+		user = Users.query.filter_by(user_token=request.args['user_token']).first()
+		if not user:
+			return make_response(jsonify({'error':'Authentication failed.'}), 400)
+		else:
+			claims = Claims.query.filter_by(user_id=user.id).all()
+			reply = {}
+			for claim in claims:
+				print claim.requests
 	else:
 		return make_response(jsonify({'error':'Authentication required.'}), 400)
 
