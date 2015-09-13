@@ -25,7 +25,7 @@ def hello():
 @app.route("/api/v0.1/register", methods=['POST'])
 def register():
 	if not all (k in request.form for k in ("username","password","email","phone","address")):
-		return make_response(jsonify({'error':'Invalid usage. Must include username, password, email, phone and address.'}), 400)
+		return make_response(jsonify({'error':'Invalid usage. Must include username, password, email, phone, zip_code and address.'}), 400)
 	else:
 		def validate(input):
 			return len(input) >= 8 and len(input) <= 16
@@ -33,7 +33,7 @@ def register():
 		if validate(request.form['username']) and validate(request.form['password']):
 			user = Users.query.filter_by(username=request.form['username']).first()
 			if not user:
-				user = Users(request.form['username'], request.form['password'], request.form['email'], request.form['phone'], request.form['address'])
+				user = Users(request.form['username'], request.form['password'], request.form['email'], request.form['phone'], request.form['zip_code'])
 				db.session.add(user)
 				db.session.commit()
 				return make_response(jsonify(
@@ -41,7 +41,7 @@ def register():
 							'username':user.username,
 							'email':user.email,
 							'phone':user.phone,
-							'address':user.address,
+							'zip_code':user.zip_code,
 							'user_token':user.user_token	
 						}
 					}), 200)	
@@ -62,7 +62,7 @@ def add_request():
 			user_request = Requests(request.form['title'], request.form['type'], request.form['description'], request.form['paid'], request.form['estimated_time'], request.form['complete_by'])
 			user.requests.append(user_request)
 			db.session.commit()
-			return make_response(jsonify({'success', 'Added request!'}), 200)
+			return make_response(jsonify({'success': 'Added request!'}), 200)
 		else:
 			return make_response(jsonify({'error':'Messed up token?'}), 400)
 
@@ -76,6 +76,7 @@ def get_user():
 			return make_response(jsonify({'error', 'User not found or authentication not provided.'}), 404)
 		else:
 			return make_response(jsonify({
+				'id':user.id,
 				'username':user.username,
 				'email':user.email,
 				'phone':user.phone,
@@ -89,13 +90,69 @@ def types():
 	if request.args['user_token']:
 		user = Users.query.filter_by(user_token=request.args['user_token']).first()
 		if user:
-			types = Requests.query(Requests.type).distinct()
+			types = Requests.query.all()
+			reply = []
+			arr = {}
 			for type in types:
-				print type
+				if type.users.zip_code == user.zip_code:
+					if not type.type in reply:
+						reply.append(type.type)
+			
+			for item in reply:
+				arr[str(len(arr))] = str(item)
+
+			return make_response(jsonify(arr), 200)
+	
 		else:
 			return make_response(jsonify({'error':'Messed up token?'}), 400) 
 	else:
 		return make_response(jsonify({'error':'Requires authentication.'}), 400)
+
+@app.route("/api/v0.1/requests/all")
+def all_requests():
+	if request.args['user_token']:
+		user = Users.query.filter_by(user_token = request.args['user_token']).first()
+		if user:
+			all_requests = Requests.query.all()
+			reply = {}
+			for req in all_requests:
+				if req.users.zip_code == user.zip_code or req.users.id == user.id:
+					reply[str(len(reply))] = {
+								'user_id':req.user_id,
+								'claim_id':req.claim_id,
+								'title':req.title,
+								'type':req.type,
+								'description':req.description,
+								'paid':req.paid,
+								'estimated_time':req.estimated_time,
+								'complete_by':req.complete_by					
+							}
+			
+			return make_response(jsonify(reply), 200)
+		else:
+			return make_response(jsonify({'error':'User authentication failed.'}), 400)		
+
+	else:
+		return make_response(jsonify({'error':'Authentication needed.'}), 400)
+
+@app.route("/api/v0.1/claims/add", methods=['POST'])
+def add_claim():
+	if request.form['user_token']:
+		user = Users.query.filter_by(user_token = request.form['user_token']).first()
+		if user:
+			claim_request = Requests.query.filter_by(id=request.form['request_id']).first()
+			if claim_request:
+				claim = Claims(request.form['request_id'], user.id, request.form['notes'])
+				claim_request.claims.append(claim)
+				db.session.commit()
+				return make_response(jsonify({'success':'Claim added!'}), 200)
+			else:
+				return make_response(jsonify({'error':'Request ID invalid.'}), 400)
+		else:
+			return make_response(jsonify({'error':'Authentication failed.'}), 400)
+	else:
+		return make_reponse(jsonify({'error':'Authentication needed.'}), 400)
+
 
 
 if __name__ == "__main__":

@@ -18,18 +18,18 @@ class Users(db.Model):
 	password = db.Column(db.String)
 	email = db.Column(db.String)
 	phone = db.Column(db.String)
-	address = db.Column(db.String)
+	zip_code = db.Column(db.String)
 	user_token = db.Column(db.String)
 
 	requests = relationship("Requests", backref="users", primaryjoin=("Users.id==Requests.user_id"))
 	claims = relationship("Claims", backref="users", primaryjoin=("Users.id==Claims.user_id"))
 
-	def __init__(self, username, password, email, phone, address):
+	def __init__(self, username, password, email, phone, zip_code):
 		self.username = username
 		self.password = hashlib.md5(password).hexdigest()
 		self.email = email
 		self.phone = phone
-		self.address = address
+		self.zip_code = zip_code 
 		self.user_token = hashlib.md5(username + ":" + str(time.time())).hexdigest()
 
 class Requests(db.Model):
