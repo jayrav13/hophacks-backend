@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+    <head>  
+        <meta charset="UTF-8">
+        <meta name="description" content="">
+        <meta name="keywords" content="">
+        <meta name="author" content="Jay Ravaliya">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>CommunityHacks</title>
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>  
+        <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+        <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        
+        <link rel="stylesheet" type="text/css" href="/static/get/packed.css?68a86de7">
+    </head>
+    <body>    
+
+        <h1 style="text-align:center">CommunityHelps - RESTful API</h1>
+
+        <body>
+            <div class="container-fluid">
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="jumbotron">
+                        <h3>/api/v0.1/register<br /><span class="label label-default">[POST]</label></h3>
+                        <div class="alert alert-success" role="alert">Parameters: username, password, email, phone, zip_code</div>
+                        <h3>/api/v0.1/login<br /><span class="label label-default">[POST]</label></h3>
+                        <div class="alert alert-success" role="alert">Parameters: username, password</div>
+                        <h3>/api/v0.1/requests/add<br /><span class="label label-default">[POST]</label></h3>
+                        <div class="alert alert-success" role="alert">Parameters: title, description, type, estimated_time, complete_by, user_token</div>
+                        <h3>/api/v0.1/requests/get<br /><span class="label label-default">[GET]</label></h3>
+                        <div class="alert alert-success" role="alert">Parameters: user_token</div>
+                        <h3>/api/v0.1/requests/all<br /><span class="label label-default">[GET]</label></h3>
+                        <div class="alert alert-success" role="alert">Parameters: user_token</div>
+                        <h3>/api/v0.1/types<br /><span class="label label-default">[GET]</label></h3>
+                        <div class="alert alert-success" role="alert">Parameters: user_token</div>
+                        <h3>/api/v0.1/claims/add<br /><span class="label label-default">[POST]</label></h3>
+                        <div class="alert alert-success" role="alert">Parameters: request_id, notes, user_token</div>
+                        <h3>/api/v0.1/claims/confirm<br /><span class="label label-default">[POST]</label></h3>
+                        <div class="alert alert-success" role="alert">Parameters: request_id, claim_id, user_token</div>
+                        <h3>/api/v0.1/claims/get<br /><span class="label label-default">[GET]</label></h3>
+                        <div class="alert alert-success" role="alert">Parameters: user_token</div>
+                    </div>
+                </div>
+            </div>
+        </body>
+
+        <script type="text/javascript">
+
+        </script>
+
+</html>

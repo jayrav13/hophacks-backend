@@ -20,17 +20,19 @@ class Users(db.Model):
 	phone = db.Column(db.String)
 	zip_code = db.Column(db.String)
 	user_token = db.Column(db.String)
+	name = db.Column(db.String)
 
 	requests = relationship("Requests", backref="users", primaryjoin=("Users.id==Requests.user_id"))
 	claims = relationship("Claims", backref="users", primaryjoin=("Users.id==Claims.user_id"))
 
-	def __init__(self, username, password, email, phone, zip_code):
+	def __init__(self, username, password, email, phone, zip_code, name):
 		self.username = username
 		self.password = hashlib.md5(password).hexdigest()
 		self.email = email
 		self.phone = phone
 		self.zip_code = zip_code 
 		self.user_token = hashlib.md5(username + ":" + str(time.time())).hexdigest()
+		self.name = name
 
 class Requests(db.Model):
 	__tablename__ = 'requests'

@@ -1,4 +1,4 @@
-from flask import Flask, abort, request, jsonify, make_response, render_template
+from flask import Flask, abort, request, jsonify, make_response
 import requests
 from sqlalchemy import Integer, ForeignKey, String, Column
 from sqlalchemy.orm import relationship, backref
@@ -23,43 +23,40 @@ my_database = db_database
 def hello():
 	return "Hello, I love HopHacks!"
 
-@app.route("/api/v0.1/docs", methods=['GET'])
-def docs():
-	return render_template("page.html")
-
-@app.route("/api/v0.1/register", methods=['GET'])
+@app.route("/api/v0.1/register", methods=['POST'])
 def register():
-        if not all (k in request.args for k in ("username","password","email","phone","zip_code", "name")):
-                return make_response(jsonify({'error':'Invalid usage. Must include username, password, email, phone, zip_code and name.'}), 400)
-        else:
-                def validate(input):
-                        return len(input) >= 8 and len(input) <= 16
+	if not all (k in request.form for k in ("username","password","email","phone","zip_code", "name")):
+		return make_response(jsonify({'error':'Invalid usage. Must include username, password, email, phone, zip_code and name.'}), 400)
+	else:
+		def validate(input):
+			return len(input) >= 8 and len(input) <= 16
+	
+		if validate(request.form['username']) and validate(request.form['password']):
+			user = Users.query.filter_by(username=request.form['username']).first()
+			if not user:
+				user = Users(request.form['username'], request.form['password'], request.form['email'], request.form['phone'], request.form['zip_code'], request.form['name'])
+				db.session.add(user)
+				db.session.commit()
+				return make_response(jsonify(
+					{'success':{
+							'username':user.username,
+							'email':user.email,
+							'phone':user.phone,
+							'zip_code':user.zip_code,
+							'user_token':user.user_token,	
+							'name':user.name
+						}
+					}), 200)	
+			else:
+				return make_response(jsonify({'error':'Username already exists!'}), 400)
+		else:	
+			return make_response(jsonify({'error':'Username or Password not between 8 and 16 characters.'}), 400)
 
-                if validate(request.args['username']) and validate(request.args['password']):
-                        user = Users.query.filter_by(username=request.args['username']).first()
-                        if not user:
-                                user = Users(request.args['username'], request.args['password'], request.args['email'], request.args['phone'], request.args['zip_code'], request.args['name'])
-                                db.session.add(user)
-                                db.session.commit()
-                                return make_response(jsonify(
-                                        {'success':{
-                                                        'username':user.username,
-                                                        'email':user.email,
-                                                        'phone':user.phone,
-                                                        'zip_code':user.zip_code,
-                                                        'user_token':user.user_token,
-                                                        'name':user.name
-                                                }
-                                        }), 200)
-                        else:
-                                return make_response(jsonify({'error':'Username already exists!'}), 400)
-                else:
-                        return make_response(jsonify({'error':'Username or Password not between 8 and 16 characters.'}), 400)
 
-@app.route("/api/v0.1/login", methods=['GET'])
+@app.route("/api/v0.1/login", methods=['POST'])
 def login():
-	if request.args['username'] and request.args['password']:
-		user = Users.query.filter_by(username=request.args['username']).filter_by(password=hashlib.md5(request.args['password']).hexdigest()).first()
+	if request.form['username'] and request.form['password']:
+		user = Users.query.filter_by(username=request.form['username']).filter_by(password=hashlib.md5(request.form['password']).hexdigest()).first()
 		if not user:
 			return make_response(jsonify({'error':'User not found.'}), 400)
 		else:
@@ -67,15 +64,15 @@ def login():
 	else:
 		return make_response(jsonify({'error':'Must include username and password.'}), 400)
 
-@app.route("/api/v0.1/requests/add", methods=['GET'])		
+@app.route("/api/v0.1/requests/add", methods=['POST'])		
 def add_request():
-	if not request.args['user_token']:
+	if not request.form['user_token']:
 		return make_response(jsonify({'error':'User token not found.'}), 400)
 	else:
-		user_token = request.args['user_token']
+		user_token = request.form['user_token']
 		user = Users.query.filter_by(user_token = user_token).first()
 		if user:
-			user_request = Requests(request.args['title'], request.args['type'], request.args['description'], request.args['paid'], request.args['estimated_time'], request.args['complete_by'])
+			user_request = Requests(request.form['title'], request.form['type'], request.form['description'], request.form['paid'], request.form['estimated_time'], request.form['complete_by'])
 			user.requests.append(user_request)
 			db.session.commit()
 			return make_response(jsonify({'success': 'Added request!'}), 200)
@@ -152,14 +149,14 @@ def all_requests():
 	else:
 		return make_response(jsonify({'error':'Authentication needed.'}), 400)
 
-@app.route("/api/v0.1/claims/add", methods=['GET'])
+@app.route("/api/v0.1/claims/add", methods=['POST'])
 def add_claim():
-	if request.args['user_token']:
-		user = Users.query.filter_by(user_token = request.args['user_token']).first()
+	if request.form['user_token']:
+		user = Users.query.filter_by(user_token = request.form['user_token']).first()
 		if user:
-			claim_request = Requests.query.filter_by(id=request.args['request_id']).first()
+			claim_request = Requests.query.filter_by(id=request.form['request_id']).first()
 			if claim_request:
-				claim = Claims(request.args['request_id'], user.id, request.args['notes'])
+				claim = Claims(request.form['request_id'], user.id, request.form['notes'])
 				claim_request.claims.append(claim)
 				db.session.commit()
 				return make_response(jsonify({'success':'Claim added!'}), 200)
@@ -171,15 +168,15 @@ def add_claim():
 		return make_reponse(jsonify({'error':'Authentication needed.'}), 400)
 
 
-@app.route("/api/v0.1/claims/confirm", methods=['GET'])
+@app.route("/api/v0.1/claims/confirm", methods=['POST'])
 def confirm_claim():
-	if request.args['user_token']:
-		user = Users.query.filter_by(user_token=request.args['user_token']).first()
+	if request.form['user_token']:
+		user = Users.query.filter_by(user_token=request.form['user_token']).first()
 		if not user:
 			return make_response(jsonify({'error':'Authentication failed'}), 400)
 		else:
-			req = Requests.query.filter_by(id=request.args['request_id']).first()
-			claim = Claims.query.filter_by(id=request.args['claim_id']).first()
+			req = Requests.query.filter_by(id=request.form['request_id']).first()
+			claim = Claims.query.filter_by(id=request.form['claim_id']).first()
 			req.claim_id = claim.id
 			claim.complete_flag = 1
 			db.session.commit()
